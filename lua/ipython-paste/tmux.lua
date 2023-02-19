@@ -146,7 +146,7 @@ M.send_string = function(pane_id, str)
     M.execute(cmd)
 end
 
----
+---Run the specified python command in the connected tmux pane
 ---@param pane { active: string, index: string, pid: string, cur_cmd: string, id: string }
 ---@param python_command any
 M.run_python = function(pane, python_command)
