@@ -23,8 +23,9 @@ M.find_cell_block = function(bufnr, cell_comment)
         vim.api.nvim_err_writeln("The buffer is not of filetype 'python'. Please make sure you open a python file")
     end
 
-    local query = vim.treesitter.query.parse_query("python",
-        string.format('((comment) @capture (#lua-match? @capture "^(%s)"))', escaped_cell_comment))
+    local query_string = string.format('((comment) @capture (#lua-match? @capture "^(%s)"))', escaped_cell_comment)
+
+    local query = vim.treesitter.query.parse_query("python", query_string)
 
     local prev_diff_cmt_cur_ln_lowest = nil
     local prev_cmt_ln = nil
@@ -49,7 +50,7 @@ M.find_cell_block = function(bufnr, cell_comment)
         if not next_diff_cmt_cur_ln_lowest and cur_diff_ln < 0 then
             next_diff_cmt_cur_ln_lowest = cur_diff_ln
             next_cmt_ln = cmt_line
-        elseif cur_diff_ln < 0 and cur_diff_ln < next_diff_cmt_cur_ln_lowest then
+        elseif cur_diff_ln < 0 and cur_diff_ln > next_diff_cmt_cur_ln_lowest then
             next_diff_cmt_cur_ln_lowest = cur_diff_ln
             next_cmt_ln = cmt_line
         end
