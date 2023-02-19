@@ -6,7 +6,9 @@ local M = {}
 M.config = {
     python_command = "ipython --no-banner",
     cell_comment = "# %%",
-    python_tmux_cmd = "python"
+    python_tmux_cmd = "python",
+    exit_on_disconnect = true,
+    exit_on_disconnect_cmd = "exit()",
 }
 
 M.pane = nil
@@ -66,6 +68,9 @@ end
 
 ---Disconnect from tmux pane
 M.disconnect = function()
+    if M.pane and M.config.exit_on_disconnect then
+        tmux.send_string_enter(M.pane.id, M.config.exit_on_disconnect_cmd)
+    end
     M.pane = nil
 end
 
