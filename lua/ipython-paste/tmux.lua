@@ -18,7 +18,7 @@ end
 M.get_socket = function()
     local tmux_info = M.get_tmux()
     if tmux_info then
-        return vim.split(tmux_info, ",")[1]
+        return vim.split(tmux_info, ",", {})[1]
     end
 end
 
@@ -47,6 +47,11 @@ M.check_if_python = function(pane)
     end
 end
 
+M.get_number_panes = function ()
+    local cmd_out = M.execute("list-panes")
+    return #vim.split(cmd_out, "\n", {})
+end
+
 ---Get information about all panes in current tmux window
 ---cmd_out is a string which is specifcally formatted
 ---The format can be seen under |get_pane|
@@ -56,8 +61,8 @@ end
 M.get_pane_infos = function(cmd_out)
     local pane_infos = {}
 
-    for _, pane_info in pairs(vim.split(cmd_out, "\n")) do
-        local info_splitted = vim.split(pane_info, " ")
+    for _, pane_info in pairs(vim.split(cmd_out, "\n", {})) do
+        local info_splitted = vim.split(pane_info, " ", {})
         if #info_splitted > 1 then
             local index = tonumber(info_splitted[2])
             local info_table = {

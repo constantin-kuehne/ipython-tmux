@@ -18,7 +18,35 @@ M.pane = nil
 ---}
 ---@param opts { python_command: string, cell_comment: string }
 M.setup = function(opts)
-    M.config = opts
+    if opts then
+        M.config = opts
+    end
+
+    vim.api.nvim_create_user_command("IPythonConnect", function(args)
+        if #args.fargs > 0 then
+            M.connect(tonumber(args.args))
+            return
+        end
+        M.connect()
+    end, {
+        nargs = '?',
+        complete = function(_, _, _)
+            local count_pane = tmux.get_number_panes()
+            local array_options = vim.fn.range(count_pane)
+            local array_options_cast = vim.fn.map(array_options, function(_, v) return tostring(v) end)
+            return array_options_cast
+        end
+    })
+
+    vim.api.nvim_create_user_command("IPythonDisconnect", function(_)
+        M.disconnect()
+    end, {
+        nargs = '0'
+    })
+
+    vim.api.nvim_create_user_command("IPythonSendCell", function(_)
+        M.send_cell()
+    end)
 end
 
 ---Connect to tmux pane
@@ -79,7 +107,5 @@ M.send_cell = function()
 
     tmux.send_enter(M.pane.id)
 end
-
-M.connect()
 
 return M
