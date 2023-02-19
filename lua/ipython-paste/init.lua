@@ -21,7 +21,7 @@ M.pane = nil
 ---}
 ---@param opts { python_command: string, cell_comment: string }
 M.setup = function(opts)
-    if opts and #opts > 0 then
+    if opts and next(opts) ~=nil then
         M.config = opts
     end
 
