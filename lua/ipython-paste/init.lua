@@ -75,7 +75,6 @@ M.send_cell = function()
         vim.api.nvim_err_writeln("Please call connect first.")
         return
     end
-    vim.pretty_print(M.pane.cur_cmd)
 
     if not tmux.check_if_python(M.pane) then
         vim.api.nvim_err_writeln("Please start python in your connected pane (normally it should happen on connection). Calling disconnect...")
