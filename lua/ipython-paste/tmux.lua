@@ -47,7 +47,9 @@ M.check_if_python = function(pane)
     end
 end
 
-M.get_number_panes = function ()
+---Return the number of panes in window
+---@return integer
+M.get_number_panes = function()
     local cmd_out = M.execute("list-panes")
     return #vim.split(cmd_out, "\n", {})
 end
@@ -55,7 +57,6 @@ end
 ---Get information about all panes in current tmux window
 ---cmd_out is a string which is specifcally formatted
 ---The format can be seen under |get_pane|
----
 ---@param cmd_out string
 ---@return { active: string, index: string, pid: string, cur_cmd: string, id: string }[]
 M.get_pane_infos = function(cmd_out)
@@ -79,6 +80,15 @@ M.get_pane_infos = function(cmd_out)
         end
     end
     return pane_infos
+end
+
+---Get command of specified pane
+---@param pane_num any
+---@return string
+M.get_pane_cur_command = function(pane_num)
+    local cmd = string.format("list-panes -F '#{pane_current_command}' -f '#{m:%s,#{pane_id}}'", pane_num)
+    local pane_cur_cmd = vim.split(M.execute(cmd), "\n", {})[1]
+    return pane_cur_cmd
 end
 
 ---Returns the via pane_num specified pane or if only 2 panes are currently there the not active one

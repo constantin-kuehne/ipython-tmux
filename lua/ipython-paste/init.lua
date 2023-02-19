@@ -33,7 +33,7 @@ M.setup = function(opts)
         nargs = '?',
         complete = function(_, _, _)
             local count_pane = tmux.get_number_panes()
-            local array_options = vim.fn.range(count_pane-1)
+            local array_options = vim.fn.range(count_pane - 1)
             local array_options_cast = vim.fn.map(array_options, function(_, v) return tostring(v) end)
             return array_options_cast
         end
@@ -75,6 +75,8 @@ M.send_cell = function()
         vim.api.nvim_err_writeln("Please call connect first.")
         return
     end
+
+    M.pane.cur_cmd = tmux.get_pane_cur_command(M.pane.id)
 
     if not tmux.check_if_python(M.pane) then
         vim.api.nvim_err_writeln("Please start python in your connected pane (normally it should happen on connection). Calling disconnect...")
