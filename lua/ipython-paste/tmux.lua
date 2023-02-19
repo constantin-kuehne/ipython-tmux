@@ -118,6 +118,13 @@ M.get_pane = function(pane_num)
 end
 
 
+---Send a enter command to a tmux pane
+---@param pane_id string
+M.send_enter = function(pane_id)
+    local cmd = string.format("send-keys -t '%s' Enter", pane_id)
+    M.execute(cmd)
+end
+
 ---Send a string to a tmux pane and press enter to for example execute
 ---@param pane_id string
 ---@param str string

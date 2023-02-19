@@ -54,8 +54,30 @@ M.send_cell = function()
         return
     end
 
-    tmux.send_string(M.pane.id, "test")
-    text.find_previous_comment()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local lines = text.find_cell_block(bufnr, M.config.cell_comment)
+
+    if not lines then
+        return
+    end
+
+    if not lines.next_cmt_ln then
+        lines.next_cmt_ln = -1
+    end
+
+    local cell_text = text.get_cell_text(bufnr, lines.prev_cmt_ln + 1, lines.next_cmt_ln)
+    vim.pretty_print(#cell_text)
+
+    for i, line_text in ipairs(cell_text) do
+        tmux.send_string(M.pane.id, "C-a")
+        tmux.send_string(M.pane.id, line_text)
+        if i ~= #cell_text then
+            tmux.send_string(M.pane.id, "C-o")
+            tmux.send_string(M.pane.id, "DOWN")
+        end
+    end
+
+    tmux.send_enter(M.pane.id)
 end
 
 M.connect()
