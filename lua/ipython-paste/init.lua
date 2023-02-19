@@ -5,7 +5,8 @@ local M = {}
 
 M.config = {
     python_command = "ipython --no-banner",
-    cell_comment = "# %%"
+    cell_comment = "# %%",
+    python_tmux_cmd = "python"
 }
 
 M.pane = nil
@@ -54,6 +55,7 @@ M.connect = function(pane_num)
         local pane = tmux.get_pane(pane_num)
         if pane and not tmux.check_if_python(pane) then
             tmux.run_python(pane, M.config.python_command)
+            pane.cur_cmd = M.config.python_tmux_cmd
         end
         M.pane = pane
     else
@@ -73,6 +75,7 @@ M.send_cell = function()
         vim.api.nvim_err_writeln("Please call connect first.")
         return
     end
+    vim.pretty_print(M.pane.cur_cmd)
 
     if not tmux.check_if_python(M.pane) then
         vim.api.nvim_err_writeln("Please start python in your connected pane (normally it should happen on connection). Calling disconnect...")
