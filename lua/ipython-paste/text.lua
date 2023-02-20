@@ -9,6 +9,17 @@ local get_root = function(bufnr)
     return tree:root()
 end
 
+---Get the treesitter query for all comments with format cell_comment
+---@param cell_comment string
+---@return Query
+local get_query_comments = function(cell_comment)
+    local escaped_cell_comment = cell_comment:gsub("%p", "%%%1")
+    local query_string = string.format('((comment) @capture (#lua-match? @capture "^(%s)"))', escaped_cell_comment)
+
+    return vim.treesitter.query.parse_query("python", query_string)
+end
+
+
 ---Find nearest previous comment with cell_comment as content
 ---@param bufnr number?
 ---@param cell_comment string
@@ -17,15 +28,11 @@ M.find_cell_block = function(bufnr, cell_comment)
     bufnr = bufnr or vim.api.nvim_get_current_buf()
     local cur_line = vim.fn.line(".") - 1
 
-    local escaped_cell_comment = cell_comment:gsub("%p", "%%%1")
-
     if vim.bo[bufnr].filetype ~= "python" then
         vim.api.nvim_err_writeln("The buffer is not of filetype 'python'. Please make sure you open a python file")
     end
 
-    local query_string = string.format('((comment) @capture (#lua-match? @capture "^(%s)"))', escaped_cell_comment)
-
-    local query = vim.treesitter.query.parse_query("python", query_string)
+    local query = get_query_comments(cell_comment)
 
     local prev_diff_cmt_cur_ln_lowest = nil
     local prev_cmt_ln = nil
