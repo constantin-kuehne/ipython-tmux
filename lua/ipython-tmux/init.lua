@@ -1,5 +1,5 @@
-local tmux = require("ipython-paste.tmux")
-local text = require("ipython-paste.text")
+local tmux = require("ipython-tmux.tmux")
+local text = require("ipython-tmux.text")
 
 local M = {}
 
@@ -13,7 +13,7 @@ M.config = {
 
 M.pane = nil
 
----Setup the ipython-paste plugin
+---Setup the ipython-tmux plugin
 ---Defaults are:
 ---{
 ---    python_command = "ipython --no-banner",
