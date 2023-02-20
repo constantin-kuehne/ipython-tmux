@@ -9,6 +9,43 @@ local get_root = function(bufnr)
     return tree:root()
 end
 
+---Get the treesitter query for all comments with format cell_comment
+---@param cell_comment string
+---@return Query
+local get_query_comments = function(cell_comment)
+    local escaped_cell_comment = cell_comment:gsub("%p", "%%%1")
+    local query_string = string.format('((comment) @capture (#lua-match? @capture "^(%s)"))', escaped_cell_comment)
+
+    return vim.treesitter.query.parse_query("python", query_string)
+end
+
+local create_virtual_text = function(bufnr, cell_comment, namespace_id)
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+
+    local query = get_query_comments(cell_comment)
+    local root = get_root(bufnr)
+
+    for _, node in query:iter_captures(root, bufnr, 0, -1) do
+        local line, _, _, _ = node:range()
+        vim.api.nvim_buf_set_extmark(bufnr, namespace_id, line, 0, {
+            virt_lines = { { { "Run", "comment" } } },
+            virt_lines_above = true
+        })
+    end
+end
+
+---Create an Autocmd for virtual text and returns the namespace id for this virtual text
+---@param bufnr number?
+---@param cell_comment string
+---@param file_pattern string
+---@return number
+M.create_virtual_text_autocmd = function(bufnr, cell_comment, file_pattern)
+    local namespace_id = vim.api.nvim_create_namespace("ipython-paste-virtual-text")
+    create_virtual_text(bufnr, cell_comment, namespace_id)
+
+    return namespace_id
+end
+
 ---Find nearest previous comment with cell_comment as content
 ---@param bufnr number?
 ---@param cell_comment string
@@ -17,15 +54,11 @@ M.find_cell_block = function(bufnr, cell_comment)
     bufnr = bufnr or vim.api.nvim_get_current_buf()
     local cur_line = vim.fn.line(".") - 1
 
-    local escaped_cell_comment = cell_comment:gsub("%p", "%%%1")
-
     if vim.bo[bufnr].filetype ~= "python" then
         vim.api.nvim_err_writeln("The buffer is not of filetype 'python'. Please make sure you open a python file")
     end
 
-    local query_string = string.format('((comment) @capture (#lua-match? @capture "^(%s)"))', escaped_cell_comment)
-
-    local query = vim.treesitter.query.parse_query("python", query_string)
+    local query = get_query_comments(cell_comment)
 
     local prev_diff_cmt_cur_ln_lowest = nil
     local prev_cmt_ln = nil
@@ -73,7 +106,7 @@ end
 ---@param end_line number
 ---@return string[]
 M.get_cell_text = function(bufnr, start_line, end_line)
-    local cell_text = vim.api.nvim_buf_get_lines(bufnr, start_line,  end_line, false)
+    local cell_text = vim.api.nvim_buf_get_lines(bufnr, start_line, end_line, false)
     return cell_text
 end
 

@@ -9,6 +9,8 @@ M.config = {
     python_tmux_cmd = "python",
     exit_on_disconnect = true,
     exit_on_disconnect_cmd = "exit()",
+    virtual_text = true,
+    file_pattern = "*.py"
 }
 
 M.pane = nil
@@ -21,7 +23,7 @@ M.pane = nil
 ---}
 ---@param opts { python_command: string, cell_comment: string }
 M.setup = function(opts)
-    if opts and next(opts) ~=nil then
+    if opts and next(opts) ~= nil then
         M.config = opts
     end
 
@@ -64,6 +66,7 @@ M.connect = function(pane_num)
         vim.api.nvim_err_writeln(string.format("Please only connect with one pane. You are currenty connected to pane '%s'. First use the disconnect function to change pane."
             , M.pane.index))
     end
+    text.create_virtual_text_autocmd(nil, M.config.cell_comment, M.config.file_pattern)
 end
 
 ---Disconnect from tmux pane
