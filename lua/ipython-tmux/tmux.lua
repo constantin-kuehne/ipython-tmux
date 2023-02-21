@@ -38,13 +38,23 @@ end
 
 ---Check if python is running in a pane
 ---@param pane { active: string, index: string, pid: string, cur_cmd: string, id: string }
+---@param exact boolean
+---@param cmd string
 ---@return boolean
-M.check_if_python = function(pane)
-    if pane.cur_cmd == "python" then
-        return true
-    else
+M.check_if_python = function(pane, exact, cmd)
+    if not exact then
+        if pane.cur_cmd:find(cmd) ~= nil then
+            return true
+        end
+
         return false
     end
+
+    if pane.cur_cmd == "python" then
+        return true
+    end
+
+    return false
 end
 
 ---Return the number of panes in window
@@ -100,7 +110,8 @@ M.get_pane = function(pane_num)
     end
 
     if M.get_tmux() then
-        local cmd_out = M.execute("list-panes -F '#{pane_active} #{pane_index} #{pane_pid} #{pane_current_command} #{pane_id}'")
+        local cmd_out = M.execute(
+            "list-panes -F '#{pane_active} #{pane_index} #{pane_pid} #{pane_current_command} #{pane_id}'")
 
         local pane_candidate = nil
 

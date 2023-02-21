@@ -7,6 +7,7 @@ M.config = {
     python_command = "ipython --no-banner",
     cell_comment = "# %%",
     python_tmux_cmd = "python",
+    python_tmux_cmd_exact = false,
     exit_on_disconnect = true,
     exit_on_disconnect_cmd = "exit()",
 }
@@ -21,7 +22,7 @@ M.pane = nil
 ---}
 ---@param opts { python_command: string, cell_comment: string }
 M.setup = function(opts)
-    if opts and next(opts) ~=nil then
+    if opts and next(opts) ~= nil then
         M.config = opts
     end
 
@@ -55,20 +56,23 @@ end
 M.connect = function(pane_num)
     if not M.pane then
         local pane = tmux.get_pane(pane_num)
-        if pane and not tmux.check_if_python(pane) then
+        if pane and not tmux.check_if_python(pane, M.config.python_tmux_cmd_exact, M.config.python_tmux_cmd) then
             tmux.run_python(pane, M.config.python_command)
             pane.cur_cmd = M.config.python_tmux_cmd
         end
         M.pane = pane
     else
-        vim.api.nvim_err_writeln(string.format("Please only connect with one pane. You are currenty connected to pane '%s'. First use the disconnect function to change pane."
+        vim.api.nvim_err_writeln(string.format(
+            "Please only connect with one pane. You are currenty connected to pane '%s'. First use the disconnect function to change pane."
             , M.pane.index))
     end
 end
 
 ---Disconnect from tmux pane
 M.disconnect = function()
-    if M.pane and M.config.exit_on_disconnect then
+
+    M.pane.cur_cmd = tmux.get_pane_cur_command(M.pane.id)
+    if M.pane and tmux.check_if_python(M.pane, M.config.python_tmux_cmd_exact, M.config.python_tmux_cmd) and M.config.exit_on_disconnect then
         tmux.send_string_enter(M.pane.id, M.config.exit_on_disconnect_cmd)
     end
     M.pane = nil
@@ -83,8 +87,9 @@ M.send_cell = function()
 
     M.pane.cur_cmd = tmux.get_pane_cur_command(M.pane.id)
 
-    if not tmux.check_if_python(M.pane) then
-        vim.api.nvim_err_writeln("Please start python in your connected pane (normally it should happen on connection). Calling disconnect...")
+    if not tmux.check_if_python(M.pane, M.config.python_tmux_cmd_exact, M.config.python_tmux_cmd) then
+        vim.api.nvim_err_writeln(
+            "Please start python in your connected pane (normally it should happen on connection). Calling disconnect...")
         M.disconnect()
         return
     end
