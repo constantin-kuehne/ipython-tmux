@@ -143,6 +143,12 @@ M.get_pane = function(pane_num)
     end
 end
 
+---Escape ' and " for sending strings to tmux
+---@param str string
+local encode_for_tmux = function(str)
+    return str:gsub('"', [[\%1]])
+end
+
 
 ---Send a enter command to a tmux pane
 ---@param pane_id string
@@ -155,7 +161,7 @@ end
 ---@param pane_id string
 ---@param str string
 M.send_string_enter = function(pane_id, str)
-    local cmd = str.format("send-keys -t '%s' '%s' Enter", pane_id, str)
+    local cmd = string.format("send-keys -t '%s' '%s' Enter", pane_id, str)
     M.execute(cmd)
 end
 
@@ -167,11 +173,37 @@ M.send_string = function(pane_id, str)
     M.execute(cmd)
 end
 
+
+---Send a string to a tmux pane
+---@param pane_id string
+---@param str string
+M.send_string_literal = function(pane_id, str)
+    local cmd = string.format('send-keys -t "%s" -l "%s"', pane_id, encode_for_tmux(str))
+    M.execute(cmd)
+end
+
 ---Run the specified python command in the connected tmux pane
 ---@param pane { active: string, index: string, pid: string, cur_cmd: string, id: string }
 ---@param python_command any
 M.run_python = function(pane, python_command)
     M.send_string_enter(pane.id, python_command)
+end
+
+
+---Send lines of text to a pane
+---@param pane_id string
+---@param cell_text string[]
+M.send_text_to_pane = function(pane_id, cell_text)
+    for i, line_text in ipairs(cell_text) do
+        M.send_string(pane_id, "C-a")
+        M.send_string_literal(pane_id, line_text)
+        if i ~= #cell_text then
+            M.send_string(pane_id, "C-o")
+            M.send_string(pane_id, "DOWN")
+        end
+    end
+
+    M.send_enter(pane_id)
 end
 
 return M

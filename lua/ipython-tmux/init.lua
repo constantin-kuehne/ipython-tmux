@@ -47,7 +47,7 @@ M.setup = function(opts)
     end, {})
 
     vim.api.nvim_create_user_command("IPythonSendCell", function(_)
-        M.send_cell()
+        M.send_text()
     end, {})
 end
 
@@ -70,7 +70,6 @@ end
 
 ---Disconnect from tmux pane
 M.disconnect = function()
-
     M.pane.cur_cmd = tmux.get_pane_cur_command(M.pane.id)
     if M.pane and tmux.check_if_python(M.pane, M.config.python_tmux_cmd_exact, M.config.python_tmux_cmd) and M.config.exit_on_disconnect then
         tmux.send_string_enter(M.pane.id, M.config.exit_on_disconnect_cmd)
@@ -78,7 +77,7 @@ M.disconnect = function()
     M.pane = nil
 end
 
----Send a ipython cell to connected tmux pane
+---Send an ipython cell or visual selected text to connected tmux pane
 M.send_cell = function()
     if not M.pane then
         vim.api.nvim_err_writeln("Please call connect first.")
@@ -95,28 +94,20 @@ M.send_cell = function()
     end
 
     local bufnr = vim.api.nvim_get_current_buf()
-    local lines = text.find_cell_block(bufnr, M.config.cell_comment)
+    local lines = text.get_cell_lns(bufnr, M.config.cell_comment)
 
     if not lines then
+        vim.api.nvim_err_writeln("Lines not found.")
         return
     end
 
-    if not lines.next_cmt_ln then
-        lines.next_cmt_ln = -1
+    if not lines.last_ln then
+        lines.last_ln = -1
     end
 
-    local cell_text = text.get_cell_text(bufnr, lines.prev_cmt_ln + 1, lines.next_cmt_ln)
+    local cell_text = text.get_lns_text(bufnr, lines.first_ln + 1, lines.last_ln)
 
-    for i, line_text in ipairs(cell_text) do
-        tmux.send_string(M.pane.id, "C-a")
-        tmux.send_string(M.pane.id, line_text)
-        if i ~= #cell_text then
-            tmux.send_string(M.pane.id, "C-o")
-            tmux.send_string(M.pane.id, "DOWN")
-        end
-    end
-
-    tmux.send_enter(M.pane.id)
+    tmux.send_text_to_pane(M.pane.id, cell_text)
 end
 
 return M
