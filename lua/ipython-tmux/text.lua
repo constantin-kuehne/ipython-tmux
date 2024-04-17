@@ -20,7 +20,7 @@ local get_cell_query_lns = function(bufnr, cell_comment)
 
     local query_string = string.format('((comment) @capture (#lua-match? @capture "^(%s)"))', escaped_cell_comment)
 
-    local query = vim.treesitter.query.parse_query("python", query_string)
+    local query = vim.treesitter.query.parse("python", query_string)
 
     local prev_diff_cmt_cur_ln_lowest = nil
     local prev_cmt_ln = nil
