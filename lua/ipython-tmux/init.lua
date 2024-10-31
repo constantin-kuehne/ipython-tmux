@@ -110,4 +110,16 @@ M.send_cell = function()
     tmux.send_text_to_pane(M.pane.id, cell_text)
 end
 
+M.save_ipynb = function()
+    local file_name = vim.fn.expand("%:t:r")
+    local cmd = { "%notebook " .. file_name .. ".ipynb" }
+    tmux.send_text_to_pane(M.pane.id, cmd)
+end
+
+M.save_state = function()
+    local file_name = vim.fn.expand("%:t:r")
+    local cmd = { 'import dill; dill.dump_session("' .. file_name .. '.db")', }
+    tmux.send_text_to_pane(M.pane.id, cmd)
+end
+
 return M
