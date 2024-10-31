@@ -6,7 +6,6 @@ M.get_tmux = function()
     return os.getenv("TMUX")
 end
 
-
 ---Get id of active tmux pane
 ---@return string?
 M.get_active_pane_id = function()
@@ -43,14 +42,14 @@ end
 ---@return boolean
 M.check_if_python = function(pane, exact, cmd)
     if not exact then
-        if pane.cur_cmd:find(cmd) ~= nil then
+        if pane.cur_cmd:lower():find(cmd) ~= nil then
             return true
         end
 
         return false
     end
 
-    if pane.cur_cmd == "python" then
+    if pane.cur_cmd:lower() == "python" then
         return true
     end
 
@@ -81,7 +80,7 @@ M.get_pane_infos = function(cmd_out)
                 index = info_splitted[2],
                 pid = info_splitted[3],
                 cur_cmd = info_splitted[4],
-                id = info_splitted[5]
+                id = info_splitted[5],
             }
 
             if index then
@@ -110,8 +109,8 @@ M.get_pane = function(pane_num)
     end
 
     if M.get_tmux() then
-        local cmd_out = M.execute(
-            "list-panes -F '#{pane_active} #{pane_index} #{pane_pid} #{pane_current_command} #{pane_id}'")
+        local cmd_out =
+            M.execute("list-panes -F '#{pane_active} #{pane_index} #{pane_pid} #{pane_current_command} #{pane_id}'")
 
         local pane_candidate = nil
 
@@ -149,7 +148,6 @@ local encode_for_tmux = function(str)
     return str:gsub('"', [[\%1]])
 end
 
-
 ---Send a enter command to a tmux pane
 ---@param pane_id string
 M.send_enter = function(pane_id)
@@ -173,12 +171,11 @@ M.send_string = function(pane_id, str)
     M.execute(cmd)
 end
 
-
 ---Send a string to a tmux pane
 ---@param pane_id string
 ---@param str string
 M.send_string_literal = function(pane_id, str)
-    local cmd = string.format('send-keys -t "%s" -l "%s"', pane_id, encode_for_tmux(str))
+    local cmd = string.format('send-keys -t "%s" %s', pane_id, str)
     M.execute(cmd)
 end
 
@@ -189,21 +186,32 @@ M.run_python = function(pane, python_command)
     M.send_string_enter(pane.id, python_command)
 end
 
-
 ---Send lines of text to a pane
 ---@param pane_id string
 ---@param cell_text string[]
 M.send_text_to_pane = function(pane_id, cell_text)
-    for i, line_text in ipairs(cell_text) do
-        M.send_string(pane_id, "C-a")
-        M.send_string_literal(pane_id, line_text)
-        if i ~= #cell_text then
-            M.send_string(pane_id, "C-o")
-            M.send_string(pane_id, "DOWN")
+    local cell_text_concat = table.concat(
+        vim.tbl_map(function(s)
+            return '"' .. encode_for_tmux(s) .. '"'
+        end, cell_text),
+        " C-q C-j "
+    )
+    M.send_string(pane_id, "C-a")
+    M.send_string_literal(pane_id, cell_text_concat)
+    M.send_enter(pane_id)
+
+    local tab_char
+    if vim.bo.expandtab == false then
+        tab_char = "\t"
+        if cell_text[#cell_text]:sub(1, 1) == tab_char then
+            M.send_enter(pane_id)
+        end
+    else
+        tab_char = string.rep(" ", vim.bo.tabstop)
+        if cell_text[#cell_text]:sub(1, vim.bo.tabstop) == tab_char then
+            M.send_enter(pane_id)
         end
     end
-
-    M.send_enter(pane_id)
 end
 
 return M
